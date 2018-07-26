@@ -148,13 +148,11 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="NetvarManager.cpp" />
     <ClCompile Include="ProcMem.cpp" />
-    <ClCompile Include="SimpleString.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="NetvarManager.h" />
     <ClInclude Include="ProcMem.h" />
-    <ClInclude Include="SimpleString.h" />
     <ClInclude Include="defs.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>

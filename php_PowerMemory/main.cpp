@@ -1,7 +1,6 @@
 #include "defs.h"
 #include "zend_config.w32.h" 
 #include "php.h"
-#include "SimpleString.h"
 #include "utils.h"
 #include "ProcMem.h"
 
@@ -29,6 +28,113 @@ PHP_FUNCTION(PowerMem_SRC_GetNetVarOffset);
 PHP_FUNCTION(PowerMem_ShellExecute);
 
 #define PowerMemoryVersion	"1.2.2"
+
+class SimpleString
+{
+private:
+	char* _buf;
+	size_t _size;
+
+public:
+
+	SimpleString()
+	{
+		_size = 0;
+		_buf = nullptr;
+	}
+
+	SimpleString(size_t s)
+	{
+		_size = s;
+		if (s == 0)
+			return;
+		_buf = new char[_size];
+		_buf[0] = '\0';
+	}
+
+	SimpleString(const char* str)
+	{
+		_size = strlen(str) + 1;
+		_buf = new char[_size];
+		strcpy_s(_buf, _size, str);
+	}
+
+	SimpleString(SimpleString& copy)
+	{
+		_buf = new char[copy._size];
+		_size = copy._size;
+		strcpy_s(_buf, _size, copy._buf);
+	}
+
+	~SimpleString()
+	{
+		if (_size > 0)
+			delete[] _buf;
+	}
+
+	void resize(size_t s)
+	{
+		if (_size > 0)
+			delete[] _buf;
+		_size = s;
+		if (s == 0)
+			return;
+		_size = s;
+		_buf = new char[_size];
+		_buf[0] = '\0';
+	}
+
+	template<typename T>
+	char& at(T i)
+	{
+		return _buf[size_t(i)];
+	}
+
+	template<typename T>
+	char& operator[](T i)
+	{
+		return _buf[size_t(i)];
+	}
+
+	SimpleString& operator=(const SimpleString& str)
+	{
+		if (_size > 0)
+			delete[] _buf;
+		_size = str._size;
+		_buf = new char[_size];
+		strcpy_s(_buf, _size, str._buf);
+		return *this;
+	}
+
+	SimpleString& operator=(const char* str)
+	{
+		if (_size > 0)
+			delete[] _buf;
+		_size = strlen(str) + 1;
+		_buf = new char[_size];
+		strcpy_s(_buf, _size, str);
+		return *this;
+	}
+
+	const char* c_str() const
+	{
+		if(_size > 0)
+			return _buf;
+		else return "";
+	}
+
+	size_t length() const
+	{
+		if (_size > 0)
+			return strlen(_buf);
+		else return 0;
+	}
+
+	size_t size() const
+	{
+		return _size;
+	}
+};
 
 const zend_function_entry PowerMemory_functions[] = 
 	{
@@ -113,9 +219,12 @@ PHP_FUNCTION(PowerMem_Help)
 
 PHP_FUNCTION(PowerMem_About)	//No args
 {
-	String str = "PowerMemory PHP extension by Fullmetal Alcoholic, version ";
-	str.Append(PowerMemoryVersion);
-	RETURN_STRING(str.c_str(), 1);  
+	const char about[] =
+	{
+		"PowerMemory PHP extension by Fullmetal Alcoholic, version "
+		PowerMemoryVersion
+	};
+	RETURN_STRING(about, 1);
 }
 
 PHP_FUNCTION(PowerMem_MessageBox)
@@ -327,12 +436,9 @@ PHP_FUNCTION(PowerMem_ReadProcessMemory) //(long ProcessID, string moduleName, s
 			RETURN_NULL();
 		}
 
-		char* strbuf = new char[bytes_num];
-		strbuf[0] = '\0';
-		mem.ReadDataAsStringA(addr, strbuf, bytes_num);
-		String sstr = strbuf;
-		delete[] strbuf;
-		RETURN_STRING(sstr.c_str(), 1);
+		SimpleString str(bytes_num);
+		mem.ReadDataAsStringA(addr, &str.at(0), bytes_num);
+		RETURN_STRING(str.c_str(), 1);
 	}
 	else if (iequals(readAs, "int") || iequals(readAs, "long"))
 	{
