@@ -33,7 +33,7 @@ public:
 	ProcMem(DWORD processID);
 	~ProcMem();
 
-	void Free();
+	void Close();
 
 	template <class cData>
 	bool Read(DWORD dwAddress, cData& cRead)
@@ -67,10 +67,10 @@ public:
 	bool WriteBinaryData(DWORD addr, const BYTE* dataBuffer, size_t size, bool protect = true);
 
 	//MEMORY FUNCTION PROTOTYPES
-	virtual bool Process(DWORD processID); //Return Handle To The Process
-	virtual DWORD GetBase();
-	virtual DWORD PatternScan(const char* moduleName, const char* pattern, const char* method, DWORD patternOffset, DWORD addressOffset); //Find A Byte Pattern
-	virtual DWORD Module(LPCSTR ModuleName); //Return Module Base Address
+	bool Process(DWORD processID); //Return Handle To The Process
+	DWORD GetBase();
+	DWORD PatternScan(const char* moduleName, const char* pattern, const char* method, DWORD patternOffset, DWORD addressOffset); //Find A Byte Pattern
+	DWORD Module(LPCSTR ModuleName); //Return Module Base Address
 };
 #endif
 

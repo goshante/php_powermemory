@@ -9,7 +9,6 @@
 #include "ProcMem.h"
 #include "utils.h"
 
-using namespace std;
 
 ProcMem::ProcMem() 
 {
@@ -32,10 +31,10 @@ ProcMem::ProcMem(DWORD processID)
 
 ProcMem::~ProcMem() 
 {
-	Free();
+	Close();
 }
 
-void ProcMem::Free()
+void ProcMem::Close()
 {
 	if (hProcess)
 	{

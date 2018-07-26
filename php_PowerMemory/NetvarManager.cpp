@@ -25,9 +25,6 @@ const uintptr_t& CMemory::Get(void) const
 	return _base;
 }
 
-
-
-
 RecvTable::RecvTable(const uintptr_t& base, DWORD procID) :
 	CMemory(base, 0x10, procID)
 {
@@ -156,7 +153,7 @@ bool CNetVarManager::Load()
 	}
 
 	firstclass = procMemManager.PatternScan("client.dll", ss.str().c_str(), "READ", 0x2B, 0);
-	procMemManager.Free();
+	procMemManager.Close();
 
 	if (!firstclass)
 		return false;

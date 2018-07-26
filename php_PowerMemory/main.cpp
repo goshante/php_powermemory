@@ -179,27 +179,31 @@ PHP_FUNCTION(PowerMem_ReadProcessMemory) //(long ProcessID, string moduleName, s
 
 	if (ProcessID <= 0)
 	{
-		RETURN_STRING("Error: Process ID cannot be zero or lower than zero.", 1);
+		php_error(1, "PHP PowerMemory Error: Process ID cannot be zero or lower than zero.");
+		RETURN_NULL();
 	}
 
 	if (moduleName_len == 0)
 	{
-		RETURN_STRING("Error: Module name is empty.", 1);
+		php_error(1, "PHP PowerMemory Error: Module name is empty.");
+		RETURN_NULL();
 	}
 
 	if (readAs_len == 0)
 	{
-		RETURN_STRING("Error: Input type is empty.", 1);
+		php_error(1, "PHP PowerMemory Error: Input type is empty.");
+		RETURN_NULL();
 	}
 
 	if (!mem.Process(ProcessID))
 	{
-		RETURN_STRING("Error: Process not found.", 1);
+		php_error(1, "PHP PowerMemory Error: Process not found.");
+		RETURN_NULL();
 	}
 
+	
 	DWORD base, dwOffset, addr;
 	char* tmp;
-
 	if (moduleName_len > 2 && moduleName[0] == '0' && (moduleName[1] == 'x' || moduleName[1] == 'X'))
 		base = strtoul(moduleName, &tmp, 16);
 	else
@@ -212,13 +216,7 @@ PHP_FUNCTION(PowerMem_ReadProcessMemory) //(long ProcessID, string moduleName, s
 			base = mem.Module(moduleName);
 	}
 
-	if (offset_len == 0)
-		dwOffset = 0;
-	else if (offset_len > 2 && offset[0] == '0' && (offset[1] == 'x' || offset[1] == 'X'))
-		dwOffset = strtoul(offset, &tmp, 16);
-	else
-		dwOffset = strtoul(offset, &tmp, 10);
-
+	dwOffset = StrToDword(offset, offset_len);
 	addr = base + dwOffset;
 
 	if (returnAddress)
@@ -233,7 +231,8 @@ PHP_FUNCTION(PowerMem_ReadProcessMemory) //(long ProcessID, string moduleName, s
 	{
 		if (bytes_num <= 0)
 		{
-			RETURN_STRING("Error: Cannot read 0 bytes.", 1);
+			php_error(1, "PHP PowerMemory Error: Cannot read 0 bytes.");
+			RETURN_NULL();
 		}
 		BYTE* b_arr = new BYTE[bytes_num];
 		mem.ReadBinaryData(addr, b_arr, bytes_num);
@@ -247,7 +246,8 @@ PHP_FUNCTION(PowerMem_ReadProcessMemory) //(long ProcessID, string moduleName, s
 		DWORD dw = 0;
 		if (!mem.Read<DWORD>(addr, dw))
 		{
-			RETURN_STRING("Error: Read operation failed.", 1);
+			php_error(1, "PHP PowerMemory Error: Read operation failed.");
+			RETURN_NULL();
 		}
 		char zdw[32];
 		sprintf_s(zdw, 32, "0x%X", dw);
@@ -262,7 +262,8 @@ PHP_FUNCTION(PowerMem_ReadProcessMemory) //(long ProcessID, string moduleName, s
 		}
 		else
 		{
-			RETURN_STRING("Error: Read operation failed.", 1);
+			php_error(1, "PHP PowerMemory Error: Read operation failed.");
+			RETURN_NULL();
 		}
 	}
 	else if (iequals(readAs, "double"))
@@ -274,7 +275,8 @@ PHP_FUNCTION(PowerMem_ReadProcessMemory) //(long ProcessID, string moduleName, s
 		}
 		else
 		{
-			RETURN_STRING("Error: Read operation failed.", 1);
+			php_error(1, "PHP PowerMemory Error: Read operation failed.");
+			RETURN_NULL();
 		}
 	}
 	else if (iequals(readAs, "bool"))
@@ -286,7 +288,8 @@ PHP_FUNCTION(PowerMem_ReadProcessMemory) //(long ProcessID, string moduleName, s
 		}
 		else
 		{
-			RETURN_STRING("Error: Read operation failed.", 1);
+			php_error(1, "PHP PowerMemory Error: Read operation failed.");
+			RETURN_NULL();
 		}
 	}
 	else if (iequals(readAs, "char"))
@@ -294,7 +297,8 @@ PHP_FUNCTION(PowerMem_ReadProcessMemory) //(long ProcessID, string moduleName, s
 		char c = '\0';
 		if (!mem.Read<char>(addr, c))
 		{
-			RETURN_STRING("Error: Read operation failed.", 1);
+			php_error(1, "PHP PowerMemory Error: Read operation failed.");
+			RETURN_NULL();
 		}
 		char cs[2];
 		cs[0] = c;
@@ -306,7 +310,8 @@ PHP_FUNCTION(PowerMem_ReadProcessMemory) //(long ProcessID, string moduleName, s
 		BYTE b = 0x0;
 		if (!mem.Read<BYTE>(addr, b))
 		{
-			RETURN_STRING("Error: Read operation failed.", 1);
+			php_error(1, "PHP PowerMemory Error: Read operation failed.");
+			RETURN_NULL();
 		}
 		char cs[6];
 		if (b > 0xF)
@@ -319,7 +324,8 @@ PHP_FUNCTION(PowerMem_ReadProcessMemory) //(long ProcessID, string moduleName, s
 	{
 		if (bytes_num <= 0)
 		{
-			RETURN_STRING("Error: Cannot allocate zero sized buffer for string.", 1);
+			php_error(1, "PHP PowerMemory Error: Cannot allocate zero sized buffer for string.");
+			RETURN_NULL();
 		}
 
 		char* strbuf = new char[bytes_num];
@@ -338,12 +344,14 @@ PHP_FUNCTION(PowerMem_ReadProcessMemory) //(long ProcessID, string moduleName, s
 		}
 		else
 		{
-			RETURN_STRING("Error: Read operation failed.", 1);
+			php_error(1, "PHP PowerMemory Error: Read operation failed.");
+			RETURN_NULL();
 		}
 	}
 	else
 	{
-		RETURN_STRING("Error: Unknown type of value. Available types: bytes, byte, dword, pointer, int, long, float, double, bool, char, string", 1);
+		php_error(1, "PHP PowerMemory Error: Unknown type of return value. Available types (Case insensative): \"bytes\", \"byte\", \"dword\", \"pointer\", \"int\", \"long\", \"float\", \"double\", \"bool\", \"char\", \"string\"");
+		RETURN_NULL();
 	}
 
 
@@ -366,17 +374,20 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryLong)
 
 	if (ProcessID <= 0)
 	{
-		RETURN_STRING("Error: Process ID cannot be zero or lower than zero.", 1);
+		php_error(1, "PHP PowerMemory Error: Process ID cannot be zero or lower than zero.");
+		RETURN_NULL();
 	}
 
 	if (moduleName_len == 0)
 	{
-		RETURN_STRING("Error: Module name is empty.", 1);
+		php_error(1, "PHP PowerMemory Error: Module name is empty.");
+		RETURN_NULL();
 	}
 
 	if (!mem.Process(ProcessID))
 	{
-		RETURN_STRING("Error: Process not found.", 1);
+		php_error(1, "PHP PowerMemory Error: Process not found.");
+		RETURN_NULL();
 	}
 
 	DWORD base, dwOffset, addr;
@@ -394,13 +405,8 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryLong)
 			base = mem.Module(moduleName);
 	}
 
-	if (offset_len == 0)
-		dwOffset = 0;
-	else if (offset_len > 2 && offset[0] == '0' && (offset[1] == 'x' || offset[1] == 'X'))
-		dwOffset = strtoul(offset, &tmp, 16);
-	else
-		dwOffset = strtoul(offset, &tmp, 10);
 
+	dwOffset = StrToDword(offset, offset_len);
 	addr = base + dwOffset;
 	mem.Write<long>(addr, longval);
 }
@@ -422,17 +428,20 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryDword)
 
 	if (ProcessID <= 0)
 	{
-		RETURN_STRING("Error: Process ID cannot be zero or lower than zero.", 1);
+		php_error(1, "PHP PowerMemory Error: Process ID cannot be zero or lower than zero.");
+		RETURN_NULL();
 	}
 
 	if (moduleName_len == 0)
 	{
-		RETURN_STRING("Error: Module name is empty.", 1);
+		php_error(1, "PHP PowerMemory Error: Module name is empty.");
+		RETURN_NULL();
 	}
 
 	if (!mem.Process(ProcessID))
 	{
-		RETURN_STRING("Error: Process not found.", 1);
+		php_error(1, "PHP PowerMemory Error: Process not found.");
+		RETURN_NULL();
 	}
 
 	DWORD base, dwOffset, addr;
@@ -450,13 +459,7 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryDword)
 			base = mem.Module(moduleName);
 	}
 
-	if (offset_len == 0)
-		dwOffset = 0;
-	else if (offset_len > 2 && offset[0] == '0' && (offset[1] == 'x' || offset[1] == 'X'))
-		dwOffset = strtoul(offset, &tmp, 16);
-	else
-		dwOffset = strtoul(offset, &tmp, 10);
-
+	dwOffset = StrToDword(offset, offset_len);
 	addr = base + dwOffset;
 	DWORD dwVal;
 	if (dwlen == 0)
@@ -488,17 +491,20 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryFloat)
 
 	if (ProcessID <= 0)
 	{
-		RETURN_STRING("Error: Process ID cannot be zero or lower than zero.", 1);
+		php_error(1, "PHP PowerMemory Error: Process ID cannot be zero or lower than zero.");
+		RETURN_NULL();
 	}
 
 	if (moduleName_len == 0)
 	{
-		RETURN_STRING("Error: Module name is empty.", 1);
+		php_error(1, "PHP PowerMemory Error: Module name is empty.");
+		RETURN_NULL();
 	}
 
 	if (!mem.Process(ProcessID))
 	{
-		RETURN_STRING("Error: Process not found.", 1);
+		php_error(1, "PHP PowerMemory Error: Process not found.");
+		RETURN_NULL();
 	}
 
 	DWORD base, dwOffset, addr;
@@ -516,13 +522,7 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryFloat)
 			base = mem.Module(moduleName);
 	}
 
-	if (offset_len == 0)
-		dwOffset = 0;
-	else if (offset_len > 2 && offset[0] == '0' && (offset[1] == 'x' || offset[1] == 'X'))
-		dwOffset = strtoul(offset, &tmp, 16);
-	else
-		dwOffset = strtoul(offset, &tmp, 10);
-
+	dwOffset = StrToDword(offset, offset_len);
 	addr = base + dwOffset;
 	mem.Write<float>(addr, fval);
 }
@@ -544,17 +544,20 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryDouble)
 
 	if (ProcessID <= 0)
 	{
-		RETURN_STRING("Error: Process ID cannot be zero or lower than zero.", 1);
+		php_error(1, "PHP PowerMemory Error: Process ID cannot be zero or lower than zero.");
+		RETURN_NULL();
 	}
 
 	if (moduleName_len == 0)
 	{
-		RETURN_STRING("Error: Module name is empty.", 1);
+		php_error(1, "PHP PowerMemory Error: Module name is empty.");
+		RETURN_NULL();
 	}
 
 	if (!mem.Process(ProcessID))
 	{
-		RETURN_STRING("Error: Process not found.", 1);
+		php_error(1, "PHP PowerMemory Error: Process not found.");
+		RETURN_NULL();
 	}
 
 	DWORD base, dwOffset, addr;
@@ -572,13 +575,7 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryDouble)
 			base = mem.Module(moduleName);
 	}
 
-	if (offset_len == 0)
-		dwOffset = 0;
-	else if (offset_len > 2 && offset[0] == '0' && (offset[1] == 'x' || offset[1] == 'X'))
-		dwOffset = strtoul(offset, &tmp, 16);
-	else
-		dwOffset = strtoul(offset, &tmp, 10);
-
+	dwOffset = StrToDword(offset, offset_len);
 	addr = base + dwOffset;
 	mem.Write<double>(addr, dval);
 }
@@ -600,17 +597,20 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryBool)
 
 	if (ProcessID <= 0)
 	{
-		RETURN_STRING("Error: Process ID cannot be zero or lower than zero.", 1);
+		php_error(1, "PHP PowerMemory Error: Process ID cannot be zero or lower than zero.");
+		RETURN_NULL();
 	}
 
 	if (moduleName_len == 0)
 	{
-		RETURN_STRING("Error: Module name is empty.", 1);
+		php_error(1, "PHP PowerMemory Error: Module name is empty.");
+		RETURN_NULL();
 	}
 
 	if (!mem.Process(ProcessID))
 	{
-		RETURN_STRING("Error: Process not found.", 1);
+		php_error(1, "PHP PowerMemory Error: Process not found.");
+		RETURN_NULL();
 	}
 
 	DWORD base, dwOffset, addr;
@@ -628,13 +628,7 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryBool)
 			base = mem.Module(moduleName);
 	}
 
-	if (offset_len == 0)
-		dwOffset = 0;
-	else if (offset_len > 2 && offset[0] == '0' && (offset[1] == 'x' || offset[1] == 'X'))
-		dwOffset = strtoul(offset, &tmp, 16);
-	else
-		dwOffset = strtoul(offset, &tmp, 10);
-
+	dwOffset = StrToDword(offset, offset_len);
 	addr = base + dwOffset;
 	mem.Write<bool>(addr, bval);
 }
@@ -656,17 +650,20 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryByte)
 
 	if (ProcessID <= 0)
 	{
-		RETURN_STRING("Error: Process ID cannot be zero or lower than zero.", 1);
+		php_error(1, "PHP PowerMemory Error: Process ID cannot be zero or lower than zero.");
+		RETURN_NULL();
 	}
 
 	if (moduleName_len == 0)
 	{
-		RETURN_STRING("Error: Module name is empty.", 1);
+		php_error(1, "PHP PowerMemory Error: Module name is empty.");
+		RETURN_NULL();
 	}
 
 	if (!mem.Process(ProcessID))
 	{
-		RETURN_STRING("Error: Process not found.", 1);
+		php_error(1, "PHP PowerMemory Error: Process not found.");
+		RETURN_NULL();
 	}
 
 	DWORD base, dwOffset, addr;
@@ -684,13 +681,7 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryByte)
 			base = mem.Module(moduleName);
 	}
 
-	if (offset_len == 0)
-		dwOffset = 0;
-	else if (offset_len > 2 && offset[0] == '0' && (offset[1] == 'x' || offset[1] == 'X'))
-		dwOffset = strtoul(offset, &tmp, 16);
-	else
-		dwOffset = strtoul(offset, &tmp, 10);
-
+	dwOffset = StrToDword(offset, offset_len);
 	addr = base + dwOffset;
 	BYTE byval;
 	if (dwlen == 0)
@@ -719,22 +710,26 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryChar)
 
 	if (ProcessID <= 0)
 	{
-		RETURN_STRING("Error: Process ID cannot be zero or lower than zero.", 1);
+		php_error(1, "PHP PowerMemory Error: Process ID cannot be zero or lower than zero.");
+		RETURN_NULL();
 	}
 
 	if (cvallen == 0)
 	{
-		RETURN_STRING("Error: No character.", 1);
+		php_error(1, "PHP PowerMemory Error: No character.");
+		RETURN_NULL();
 	}
 
 	if (moduleName_len == 0)
 	{
-		RETURN_STRING("Error: Module name is empty.", 1);
+		php_error(1, "PHP PowerMemory Error: Module name is empty.");
+		RETURN_NULL();
 	}
 
 	if (!mem.Process(ProcessID))
 	{
-		RETURN_STRING("Error: Process not found.", 1);
+		php_error(1, "PHP PowerMemory Error: Process not found.");
+		RETURN_NULL();
 	}
 
 	DWORD base, dwOffset, addr;
@@ -752,13 +747,7 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryChar)
 			base = mem.Module(moduleName);
 	}
 
-	if (offset_len == 0)
-		dwOffset = 0;
-	else if (offset_len > 2 && offset[0] == '0' && (offset[1] == 'x' || offset[1] == 'X'))
-		dwOffset = strtoul(offset, &tmp, 16);
-	else
-		dwOffset = strtoul(offset, &tmp, 10);
-
+	dwOffset = StrToDword(offset, offset_len);
 	addr = base + dwOffset;
 	mem.Write<char>(addr, cval[0]);
 }
@@ -780,17 +769,20 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryString)
 
 	if (ProcessID <= 0)
 	{
-		RETURN_STRING("Error: Process ID cannot be zero or lower than zero.", 1);
+		php_error(1, "PHP PowerMemory Error: Process ID cannot be zero or lower than zero.");
+		RETURN_NULL();
 	}
 
 	if (moduleName_len == 0)
 	{
-		RETURN_STRING("Error: Module name is empty.", 1);
+		php_error(1, "PHP PowerMemory Error: Module name is empty.");
+		RETURN_NULL();
 	}
 
 	if (!mem.Process(ProcessID))
 	{
-		RETURN_STRING("Error: Process not found.", 1);
+		php_error(1, "PHP PowerMemory Error: Process not found.");
+		RETURN_NULL();
 	}
 
 	DWORD base, dwOffset, addr;
@@ -808,13 +800,7 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryString)
 			base = mem.Module(moduleName);
 	}
 
-	if (offset_len == 0)
-		dwOffset = 0;
-	else if (offset_len > 2 && offset[0] == '0' && (offset[1] == 'x' || offset[1] == 'X'))
-		dwOffset = strtoul(offset, &tmp, 16);
-	else
-		dwOffset = strtoul(offset, &tmp, 10);
-
+	dwOffset = StrToDword(offset, offset_len);
 	addr = base + dwOffset;
 	mem.WriteStringA(addr, strval);
 }
@@ -841,22 +827,26 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryBytes)
 
 	if (arr_size == 0)
 	{
-		RETURN_STRING("Error: Empty data array.", 1);
+		php_error(1, "PHP PowerMemory Error: Empty data array.");
+		RETURN_NULL();
 	}
 
 	if (ProcessID <= 0)
 	{
-		RETURN_STRING("Error: Process ID cannot be zero or lower than zero.", 1);
+		php_error(1, "PHP PowerMemory Error: Process ID cannot be zero or lower than zero.");
+		RETURN_NULL();
 	}
 
 	if (moduleName_len == 0)
 	{
-		RETURN_STRING("Error: Module name is empty.", 1);
+		php_error(1, "PHP PowerMemory Error: Module name is empty.");
+		RETURN_NULL();
 	}
 
 	if (!mem.Process(ProcessID))
 	{
-		RETURN_STRING("Error: Process not found.", 1);
+		php_error(1, "PHP PowerMemory Error: Process not found.");
+		RETURN_NULL();
 	}
 
 	DWORD base, dwOffset, addr;
@@ -874,13 +864,7 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryBytes)
 			base = mem.Module(moduleName);
 	}
 
-	if (offset_len == 0)
-		dwOffset = 0;
-	else if (offset_len > 2 && offset[0] == '0' && (offset[1] == 'x' || offset[1] == 'X'))
-		dwOffset = strtoul(offset, &tmp, 16);
-	else
-		dwOffset = strtoul(offset, &tmp, 10);
-
+	dwOffset = StrToDword(offset, offset_len);
 	addr = base + dwOffset;
 
 	BYTE* raw = new BYTE[arr_size];
@@ -907,7 +891,8 @@ PHP_FUNCTION(PowerMem_WriteProcessMemoryBytes)
 		else
 		{
 			delete[] raw;
-			RETURN_STRING("Error: Unknown array format. Bytes should be 'long' or 'string' elements.", 1);
+			php_error(1, "PHP PowerMemory Error: Unknown array format. Bytes should be 'long' or 'string' elements.");
+			RETURN_NULL();
 		}
 
 		raw[i] = BYTE(lval);
@@ -948,49 +933,42 @@ PHP_FUNCTION(PowerMem_PatternScan)
 	
 	if (ProcessID <= 0)
 	{
-		RETURN_STRING("Error: Process ID cannot be zero or lower than zero.", 1);
+		php_error(1, "PHP PowerMemory Error: Process ID cannot be zero or lower than zero.");
+		RETURN_NULL();
 	}
 
 	if (mo_l == 0)
 	{
-		RETURN_STRING("Error: Module is empty.", 1);
+		php_error(1, "PHP PowerMemory Error: Module is empty.");
+		RETURN_NULL();
 	}
 
 	if (pa_l == 0)
 	{
-		RETURN_STRING("Error: Pattern is empty.", 1);
+		php_error(1, "PHP PowerMemory Error: Pattern is empty.");
+		RETURN_NULL();
 	}
 
 	if (me_l == 0)
 	{
-		RETURN_STRING("Error: Method is empty.", 1);
+		php_error(1, "PHP PowerMemory Error: Method is empty.");
+		RETURN_NULL();
 	}
 
 	if (!iequals(method, "normal") && !iequals(method, "read") && !iequals(method, "substract") && !iequals(method, "both"))
 	{
-		RETURN_STRING("Error: Unknown method. Please, use one of available methods: normal, read, substract, both", 1);
+		php_error(1, "PHP PowerMemory Error: Unknown method. Please, use one of available methods (Case insensative): \"normal\", \"read\", \"substract\", \"both\"");
+		RETURN_NULL();
 	}
 
 	if (!mem.Process(ProcessID))
 	{
-		RETURN_STRING("Error: Process not found.", 1);
+		php_error(1, "PHP PowerMemory Error: Process not found.");
+		RETURN_NULL();
 	}
 
-	char* tmp;
-	if (pof_l == 0)
-		dwPatOff = 0;
-	else if (pof_l > 2 && pat_offset[0] == '0' && (pat_offset[1] == 'x' || pat_offset[1] == 'X'))
-		dwPatOff = strtoul(pat_offset, &tmp, 16);
-	else
-		dwPatOff = strtoul(pat_offset, &tmp, 10);
-
-	if (aof_l == 0)
-		dwAddrOff = 0;
-	else if (aof_l > 2 && addr_offset[0] == '0' && (addr_offset[1] == 'x' || addr_offset[1] == 'X'))
-		dwAddrOff = strtoul(addr_offset, &tmp, 16);
-	else
-		dwAddrOff = strtoul(addr_offset, &tmp, 10);
-
+	dwPatOff = StrToDword(pat_offset, pof_l);
+	dwAddrOff = StrToDword(addr_offset, aof_l);
 	DWORD result = mem.PatternScan(module, pattern, method, dwPatOff, dwAddrOff);
 	char pszResultX[32];
 	sprintf_s(pszResultX, 32, "0x%X", result);
@@ -1013,32 +991,30 @@ PHP_FUNCTION(PowerMem_SRC_GetNetVarOffset) //(long processID, string tableName, 
 
 	if (ProcessID <= 0)
 	{
-		RETURN_STRING("Error: Process ID cannot be zero or lower than zero.", 1);
+		php_error(1, "PHP PowerMemory Error: Process ID cannot be zero or lower than zero.");
+		RETURN_NULL();
 	}
 
 	if (tnl == 0)
 	{
-		RETURN_STRING("Error: Module is empty.", 1);
+		php_error(1, "PHP PowerMemory Error: Module is empty.");
+		RETURN_NULL();
 	}
 
 	if (vnl == 0)
 	{
-		RETURN_STRING("Error: Pattern is empty.", 1);
+		php_error(1, "PHP PowerMemory Error: Pattern is empty.");
+		RETURN_NULL();
 	}
 
-	char* tmp;
-	if (offl == 0)
-		dwOff = 0;
-	else if (offl > 2 && offset[0] == '0' && (offset[1] == 'x' || offset[1] == 'X'))
-		dwOff = strtoul(offset, &tmp, 16);
-	else
-		dwOff = strtoul(offset, &tmp, 10);
 
+	dwOff = StrToDword(offset, offl);
 	DWORD netvar = 0;
 
 	if (!GetNetvar(ProcessID, tableName, varName, dwOff, netvar))
 	{
-		RETURN_STRING("Error: Failed to read netvar.", 1);
+		php_error(1, "PHP PowerMemory Error: Failed to read netvar.");
+		RETURN_NULL();
 	}
 
 	char pszResultX[32];

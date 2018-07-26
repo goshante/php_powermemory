@@ -58,3 +58,16 @@ bool GetNetvar(long processID, const char* table, const char* name, DWORD offset
 	val = nvMgr.GetNetVar(table, name) + offset;
 	return true;
 }
+
+DWORD StrToDword(const char* str, long len)
+{
+	char* unused = nullptr;
+	if (len == 0)
+		return 0;
+	else if (len > 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
+		return strtoul(str, &unused, 16);
+	else if (len > 2 && str[0] == '0' && (str[1] == 'b' || str[1] == 'B'))
+		return strtoul(&str[2], &unused, 2);
+	else
+		return strtoul(str, &unused, 10);
+}
