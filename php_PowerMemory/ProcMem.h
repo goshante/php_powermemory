@@ -30,35 +30,41 @@ protected:
 public:
 
 	ProcMem();
+	ProcMem(DWORD processID);
 	~ProcMem();
 
+	void Free();
+
 	template <class cData>
-	cData Read(DWORD dwAddress)
+	bool Read(DWORD dwAddress, cData& cRead)
 	{
 		if (!hProcess)
-			return 0;
-		cData cRead = 0; //Generic Variable To Store Data
+			return false;
+
+		cRead = 0; //Generic Variable To Store Data
 		Protection<cData>(dwAddress);
-		ReadProcessMemory(hProcess, (LPVOID)dwAddress, &cRead, sizeof(cData), NULL); 
+		bool b = bool(ReadProcessMemory(hProcess, (LPVOID)dwAddress, &cRead, sizeof(cData), NULL));
 		Protection<cData>(dwAddress);
-		return cRead; //Returns Value At Specified dwAddress
+		return b; //Returns Value At Specified dwAddress
 	}
 
 	template <class cData>
-	void Write(DWORD dwAddress, cData cWrite)
+	bool Write(DWORD dwAddress, cData cWrite)
 	{
 		if (!hProcess)
-			return;
+			return false;
+
 		Protection<cData>(dwAddress);
-		WriteProcessMemory(hProcess, LPVOID(dwAddress), &cWrite, sizeof(cWrite), NULL);
+		bool b = bool(WriteProcessMemory(hProcess, LPVOID(dwAddress), &cWrite, sizeof(cWrite), NULL));
 		Protection<cData>(dwAddress);
+		return b;
 	}
 
 	size_t ReadDataAsStringA(DWORD addr, LPSTR dataBuffer, size_t sizeOfBuffer);
-	void ReadBinaryData(DWORD addr, BYTE* dataBuffer, size_t sizeOfBufferAndBytesToRead, bool protect = true);
+	bool ReadBinaryData(DWORD addr, BYTE* dataBuffer, size_t sizeOfBufferAndBytesToRead, bool protect = true);
 
-	void WriteStringA(DWORD addr, const LPSTR dataBuffer);
-	void WriteBinaryData(DWORD addr, const BYTE* dataBuffer, size_t size, bool protect = true);
+	bool WriteStringA(DWORD addr, const LPSTR dataBuffer);
+	bool WriteBinaryData(DWORD addr, const BYTE* dataBuffer, size_t size, bool protect = true);
 
 	//MEMORY FUNCTION PROTOTYPES
 	virtual bool Process(DWORD processID); //Return Handle To The Process

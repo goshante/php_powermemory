@@ -50,23 +50,11 @@ bool iequals(const char* _a, const char* _b)
 	});
 }
 
-DWORD GetNetvar(long processID, const char* table, const char* name, DWORD offset, bool& success)
+bool GetNetvar(long processID, const char* table, const char* name, DWORD offset, DWORD& val)
 {
-	success = false;
-	if (!pProcess->Attach(processID))
-		return 0;
-
-	if (!pNetVarManager->Load())
-		return 0;
-
-	DWORD val = 0;
-	val = pNetVarManager->GetNetVar(table, name) + offset;
-	pNetVarManager->Release();
-	delete pNetVarManager;
-
-	pProcess->Detach();
-	delete pProcess;
-
-	success = true;
-	return val;
+	CNetVarManager nvMgr(processID);
+	if (!nvMgr.Load())
+		return false;
+	val = nvMgr.GetNetVar(table, name) + offset;
+	return true;
 }

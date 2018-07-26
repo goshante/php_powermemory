@@ -18,10 +18,31 @@ ProcMem::ProcMem()
 	bProt = false;
 }
 
+ProcMem::ProcMem(DWORD processID)
+{
+	dwPID = 0;
+	hProcess = nullptr;
+	bProt = false;
+	if(!Process(processID))
+	{
+		dwPID = 0;
+		hProcess = nullptr;
+	}
+}
+
 ProcMem::~ProcMem() 
 {
+	Free();
+}
+
+void ProcMem::Free()
+{
 	if (hProcess)
+	{
 		CloseHandle(hProcess);
+		hProcess = nullptr;
+		dwPID = 0;
+	}
 }
 
 bool ProcMem::Process(DWORD processID) 
@@ -97,21 +118,21 @@ DWORD ProcMem::PatternScan(const char* moduleName, const char* pattern, const ch
 		if (CompareBytes(pb + off, pattern))
 		{
 
-			auto add = DWORD(hbase) + off + patternOffset;
+			auto addr = DWORD(hbase) + off + patternOffset;
 
 			if (iequals(method, "READ"))
-				add = Read<DWORD>(add);
+				Read<DWORD>(addr, addr);
 
 			if (iequals(method, "SUBSTRACT"))
-				add -= DWORD(hbase);
+				addr -= DWORD(hbase);
 
 			if (iequals(method, "BOTH"))
 			{
-				add = Read<DWORD>(add);
-				add -= DWORD(hbase);
+				Read<DWORD>(addr, addr);
+				addr -= DWORD(hbase);
 			}
 
-			return add + addressOffset;
+			return addr + addressOffset;
 		}
 	}
 	return 0;
@@ -161,41 +182,51 @@ size_t ProcMem::ReadDataAsStringA(DWORD addr, LPSTR dataBuffer, size_t sizeOfBuf
 		return 0;
 
 	Protection<void*>(addr, sizeOfBuffer);
-	ReadProcessMemory(hProcess, LPVOID(addr), dataBuffer, sizeOfBuffer, NULL);
+	bool b = bool(ReadProcessMemory(hProcess, LPVOID(addr), dataBuffer, sizeOfBuffer, NULL));
 	Protection<void*>(addr, sizeOfBuffer);
+	if (!b)
+		return 0;
 	dataBuffer[sizeOfBuffer - 1] = '\0';
 	return strlen(dataBuffer);
 }
 
-void ProcMem::ReadBinaryData(DWORD addr, BYTE* dataBuffer, size_t sizeOfBufferAndBytesToRead, bool protect)
+bool ProcMem::ReadBinaryData(DWORD addr, BYTE* dataBuffer, size_t sizeOfBufferAndBytesToRead, bool protect)
 {
 	if (!hProcess)
-		return;
+		return false;
+
 	if (protect)
 		Protection<void*>(addr, sizeOfBufferAndBytesToRead);
-	ReadProcessMemory(hProcess, LPVOID(addr), dataBuffer, sizeOfBufferAndBytesToRead, NULL);
+	bool b = bool(ReadProcessMemory(hProcess, LPVOID(addr), dataBuffer, sizeOfBufferAndBytesToRead, NULL));
 	if (protect)
 		Protection<void*>(addr, sizeOfBufferAndBytesToRead);
+
+	return b;
 }
 
-void ProcMem::WriteStringA(DWORD addr, const LPSTR dataBuffer)
+bool ProcMem::WriteStringA(DWORD addr, const LPSTR dataBuffer)
 {
 	if (!hProcess)
-		return;
+		return false;
 
 	size_t size = strlen(dataBuffer) + 1;
 	Protection<void*>(addr, size);
-	WriteProcessMemory(hProcess, LPVOID(addr), dataBuffer, size, NULL);
+	bool b = bool(WriteProcessMemory(hProcess, LPVOID(addr), dataBuffer, size, NULL));
 	Protection<void*>(addr, size);
+
+	return b;
 }
 
-void ProcMem::WriteBinaryData(DWORD addr, const BYTE* dataBuffer, size_t size, bool protect)
+bool ProcMem::WriteBinaryData(DWORD addr, const BYTE* dataBuffer, size_t size, bool protect)
 {
 	if (!hProcess)
-		return;
+		return false;
 
 	if (protect)
 		Protection<void*>(addr, size);
-	WriteProcessMemory(hProcess, LPVOID(addr), dataBuffer, size, NULL);
+	bool b = bool(WriteProcessMemory(hProcess, LPVOID(addr), dataBuffer, size, NULL));
+	if (protect)
 		Protection<void*>(addr, size);
+
+	return b;
 }
