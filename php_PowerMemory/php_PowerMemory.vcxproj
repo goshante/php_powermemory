@@ -157,7 +157,6 @@
     <ClInclude Include="SimpleString.h" />
     <ClInclude Include="defs.h" />
     <ClInclude Include="utils.h" />
-    <ClInclude Include="winapi_php.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

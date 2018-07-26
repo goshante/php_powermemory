@@ -2,7 +2,6 @@
 #include "zend_config.w32.h" 
 #include "php.h"
 #include "SimpleString.h"
-#include "winapi_php.h"
 #include "utils.h"
 #include "ProcMem.h"
 
