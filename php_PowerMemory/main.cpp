@@ -28,7 +28,7 @@ PHP_FUNCTION(PowerMem_SRC_GetNetVarOffset);
 
 PHP_FUNCTION(PowerMem_ShellExecute);
 
-#define PowerMemoryVersion	"1.1"
+#define PowerMemoryVersion	"1.2.2"
 
 const zend_function_entry PowerMemory_functions[] = 
 	{
